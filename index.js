@@ -7,8 +7,6 @@ const createFolder=async ()=>{
     const pathToBaseFolder=path.join(__dirname,'baseFolder');
     console.log(pathToBaseFolder)
 
-    const statForBaseFolder=await fsPromises.stat(pathToBaseFolder);
-    console.log(`It is a file?`,statForBaseFolder.isFile())
 
     for(let i=1;i<=5;i+=1){
         const pathToFolder=path.join(pathToBaseFolder,`folder${i}`)
@@ -16,8 +14,7 @@ const createFolder=async ()=>{
         await fsPromises.mkdir(path.join(pathToFolder),{recursive:true});
         console.log(pathToFolder)
 
-        const statForFolder=await fsPromises.stat(pathToFolder);
-        console.log(`It is a file?`,statForFolder.isFile())
+
 
         for (let j=1;j<=5;j+=1){
             const pathToFile=path.join(pathToBaseFolder,`folder${i}`,`file${j}.txt`);
@@ -25,9 +22,32 @@ const createFolder=async ()=>{
             await fsPromises.writeFile(pathToFile,`It's text for file number ${j}`);
             console.log(pathToFile)
 
-            const statForFile=await fsPromises.stat(pathToFile);
-            console.log(`It is a file?`,statForFile.isFile())
+
         }
     }
+await  checkFilesAndFolders(pathToBaseFolder)
+
 }
+
+const  checkFilesAndFolders = async (folderPath)=>{
+    const items=await fsPromises.readdir(folderPath);
+
+    for(const item of items){
+       const pathToItem=path.join(folderPath,item);
+
+
+       const checkedItem= await  fsPromises.stat(pathToItem);
+
+       if(checkedItem.isDirectory()){
+           console.log(`${pathToItem} is directory`);
+
+           await checkFilesAndFolders(pathToItem)
+       }else if(checkedItem.isFile()){
+           console.log(`${pathToItem} is file`);
+       }
+    }
+
+}
+
+
 void createFolder()
