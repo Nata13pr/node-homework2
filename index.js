@@ -1,53 +1,117 @@
-const fsPromises=require('node:fs/promises');
-const path=require('node:path')
+const express = require("express");
+const users = require("./users.json")
 
-const createFolder=async ()=>{
-    await fsPromises.mkdir(path.join(__dirname,'baseFolder'),{recursive:true});
+const app = express();
 
-    const pathToBaseFolder=path.join(__dirname,'baseFolder');
-    console.log(pathToBaseFolder)
-
-
-    for(let i=1;i<=5;i+=1){
-        const pathToFolder=path.join(pathToBaseFolder,`folder${i}`)
-
-        await fsPromises.mkdir(path.join(pathToFolder),{recursive:true});
-        console.log(pathToFolder)
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 
+app.get('/users', (req, res) => {
+    try {
+        res.send(users);
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
 
-        for (let j=1;j<=5;j+=1){
-            const pathToFile=path.join(pathToBaseFolder,`folder${i}`,`file${j}.txt`);
+app.post('/users', (req, res) => {
+    try {
+        const {name, email, password} = req.body;
 
-            await fsPromises.writeFile(pathToFile,`It's text for file number ${j}`);
-            console.log(pathToFile)
-
-
+        if (!(typeof name === 'string'
+            && typeof email === 'string'
+            && typeof password === 'string'
+            && name.length > 5
+            && name.length < 10
+            && password.length > 7
+            && password.length < 10
+        )) {
+            res.status(401).send("Not correct data");
         }
+
+        const id = users[users.length - 1].id + 1;
+        const newUser = {id, name, email, password};
+
+        users.push(newUser);
+        res.status(201).send(newUser);
+    } catch (e) {
+        res.status(500).send(e.message);
     }
-await  checkFilesAndFolders(pathToBaseFolder)
+});
 
-}
+app.get('/users/:userId', (req, res) => {
+    try {
+        const userId = Number(req.params.userId);
 
-const  checkFilesAndFolders = async (folderPath)=>{
-    const items=await fsPromises.readdir(folderPath);
+        if (typeof userId !== "number" || isNaN(userId)) {
+            return res.status(404).send('Not correct userId');
+        }
 
-    for(const item of items){
-       const pathToItem=path.join(folderPath,item);
-
-
-       const checkedItem= await  fsPromises.stat(pathToItem);
-
-       if(checkedItem.isDirectory()){
-           console.log(`${pathToItem} is directory`);
-
-           await checkFilesAndFolders(pathToItem)
-       }else if(checkedItem.isFile()){
-           console.log(`${pathToItem} is file`);
-       }
+        const user = users.find(user => user.id === userId);
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+        res.send(user);
+    } catch (e) {
+        res.status(500).send(e.message);
     }
+});
 
-}
+app.put('/users/:userId', (req, res) => {
+    try {
+        const userId = Number(req.params.userId);
+
+        if (typeof userId !== "number" || isNaN(userId)) {
+            return res.status(404).send('Not correct userId');
+        }
+
+        const userIndex = users.findIndex(user => user.id === userId);
+        if (userIndex === -1) {
+            return res.status(404).send('User not found');
+        }
+        const {name, email, password} = req.body;
+
+        if (!(typeof name === 'string'
+            && typeof email === 'string'
+            && typeof password === 'string'
+            && name.length > 5
+            && name.length < 10
+            && password.length > 7
+            && password.length < 10
+        )) {
+            res.status(401).send("Not correct data");
+        }
 
 
-void createFolder()
+        users[userIndex].name = name;
+        users[userIndex].email = email;
+        users[userIndex].password = password;
+        res.status(201).send(users[userIndex]);
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
+
+app.delete('/users/:userId', (req, res) => {
+    try {
+        const userId = Number(req.params.userId);
+
+        if (typeof userId !== "number" || isNaN(userId)) {
+            return res.status(404).send('Not correct userId');
+        }
+
+        const userIndex = users.findIndex(user => user.id === userId);
+        if (userIndex === -1) {
+            return res.status(404).send('User not found');
+        }
+        users.splice(userIndex, 1);
+        res.sendStatus(204);
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
+
+app.listen(3000, () => {
+    console.log('Server is running on http://localhost:3000');
+});
