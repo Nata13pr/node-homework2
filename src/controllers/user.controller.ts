@@ -33,24 +33,22 @@ class UserController {
     }
   }
 
-  public async delete(req: Request, res: Response, next: NextFunction) {
+  public async updateById(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = Number(req.params.userId);
-      await userService.delete(userId);
-
-      res.status(204).send();
+      const dto = req.body as IUser;
+      const result = await userService.updateById(userId, dto);
+      res.json(result);
     } catch (e) {
       next(e);
     }
   }
 
-  public async put(req: Request, res: Response, next: NextFunction) {
+  public async deleteById(req: Request, res: Response, next: NextFunction) {
     try {
-      const dto = req.body as IUser;
       const userId = Number(req.params.userId);
-
-      const result = await userService.put(dto, userId);
-      res.status(201).json(result);
+      await userService.deleteById(userId);
+      res.sendStatus(204);
     } catch (e) {
       next(e);
     }

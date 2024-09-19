@@ -27,20 +27,7 @@ class UserRepository {
     return users.find((user) => user.id === userId);
   }
 
-  public async delete(userId: number): Promise<void> {
-    const users = await read();
-
-    const userIndex = users.findIndex((user) => user.id === userId);
-    if (userIndex === -1) {
-      throw new ApiError("User not found", 404);
-    }
-    users.splice(userIndex, 1);
-
-    await write(users);
-    return;
-  }
-
-  public async put(dto: Partial<IUser>, userId: number): Promise<IUser> {
+  public async updateById(userId: number, dto: IUser): Promise<IUser> {
     const users = await read();
 
     const userIndex = users.findIndex((user) => user.id === userId);
@@ -53,7 +40,20 @@ class UserRepository {
     users[userIndex].password = dto.password;
 
     await write(users);
+
     return users[userIndex];
+  }
+
+  public async deleteById(userId: number): Promise<void> {
+    const users = await read();
+
+    const userIndex = users.findIndex((user) => user.id === userId);
+    if (userIndex === -1) {
+      throw new ApiError("User not found", 404);
+    }
+    users.splice(userIndex, 1);
+
+    await write(users);
   }
 }
 

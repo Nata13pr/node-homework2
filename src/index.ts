@@ -9,6 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/users", userRouter);
+// app.use("/cars", carRouter);
 
 app.use(
   "*",
