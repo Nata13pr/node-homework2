@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { isObjectIdOrHexString } from "mongoose";
 
 import { ApiError } from "../errors/api-error";
+import { IUser } from "../interfaces/user.interface";
+import { schema } from "../validation/user.validation";
 
 class CommonMiddleware {
   public isIdValid(key: string) {
@@ -15,6 +17,20 @@ class CommonMiddleware {
         next(e);
       }
     };
+  }
+  public isBodyValid(req: Request, res: Response, next: NextFunction) {
+    try {
+      const body = req.body as IUser;
+      const valid = schema.validate(body);
+
+      if (valid.error) {
+        throw new ApiError(`${valid.error}`, 400);
+      }
+
+      next();
+    } catch (e) {
+      next(e);
+    }
   }
 }
 
