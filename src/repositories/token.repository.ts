@@ -10,10 +10,8 @@ class TokenRepository {
     return await Token.findOne(params);
   }
 
-  public async findByParamsAndDelete(
-    params: Partial<IToken>,
-  ): Promise<IToken | null> {
-    return await Token.findOneAndDelete(params);
+  public async deleteByParams(params: Partial<IToken>): Promise<void> {
+    await Token.deleteOne(params);
   }
 }
 

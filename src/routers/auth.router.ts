@@ -14,13 +14,14 @@ router.post(
 );
 router.post(
   "/sign-in",
-  commonMiddleware.isBodyValid(UserValidator.signIn),
+  // commonMiddleware.isBodyValid(UserValidator.signIn),
   authController.signIn,
 );
+
 router.post(
-  "/refreshtoken",
+  "/refresh",
   authMiddleware.checkRefreshToken,
-  authController.refreshToken,
+  authController.refresh,
 );
 
 export const authRouter = router;

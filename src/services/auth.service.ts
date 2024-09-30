@@ -46,22 +46,18 @@ class AuthService {
     return { user, tokens };
   }
 
-  public async refreshToken(
-    jwtPayload: ITokenPayload,
-  ): Promise<{ user: IUser; tokens: ITokenPair }> {
-    const user = await userRepository.getById(jwtPayload.userId);
-    if (!user) {
-      throw new ApiError("User not found", 404);
-    }
-
-    await tokenService.deleteTokens(jwtPayload);
-
+  // TODO add refresh token service
+  public async refresh(
+    refreshToken: string,
+    payload: ITokenPayload,
+  ): Promise<ITokenPair> {
+    await tokenRepository.deleteByParams({ refreshToken });
     const tokens = tokenService.generateTokens({
-      userId: user._id,
-      role: user.role,
+      userId: payload.userId,
+      role: payload.role,
     });
-    await tokenRepository.create({ ...tokens, _userId: user._id });
-    return { user, tokens };
+    await tokenRepository.create({ ...tokens, _userId: payload.userId });
+    return tokens;
   }
 
   private async isEmailExistOrThrow(email: string): Promise<void> {

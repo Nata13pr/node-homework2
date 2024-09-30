@@ -26,7 +26,6 @@ class AuthMiddleware {
       if (!pair) {
         throw new ApiError("Token is not valid", 401);
       }
-
       req.res.locals.jwtPayload = payload;
       next();
     } catch (e) {
@@ -51,11 +50,11 @@ class AuthMiddleware {
       );
 
       const pair = await tokenRepository.findByParams({ refreshToken });
-
       if (!pair) {
         throw new ApiError("Token is not valid", 401);
       }
       req.res.locals.jwtPayload = payload;
+      req.res.locals.refreshToken = refreshToken;
       next();
     } catch (e) {
       next(e);

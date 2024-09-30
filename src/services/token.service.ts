@@ -4,7 +4,6 @@ import { configs } from "../config/configs";
 import { TokenTypeEnum } from "../enums/token-type.enum";
 import { ApiError } from "../errors/api-error";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
-import { tokenRepository } from "../repositories/token.repository";
 
 class TokenService {
   public generateTokens(payload: ITokenPayload): ITokenPair {
@@ -34,16 +33,9 @@ class TokenService {
       }
       return jsonwebtoken.verify(token, secret) as ITokenPayload;
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error(e.message);
       throw new ApiError("Invalid token", 401);
     }
-  }
-
-  public async deleteTokens(payload: ITokenPayload): Promise<void> {
-    await tokenRepository.findByParamsAndDelete({
-      _userId: payload.userId,
-    });
   }
 }
 

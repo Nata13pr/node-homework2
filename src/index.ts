@@ -12,13 +12,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-  // eslint-disable-next-line no-console
   console.log(`${req.method} ${req.path}`);
   next();
 });
 
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+// app.use("/cars", carRouter);
 
 app.use(
   "*",
@@ -28,14 +28,12 @@ app.use(
 );
 
 process.on("uncaughtException", (error) => {
-  // eslint-disable-next-line no-console
   console.error("uncaughtException", error.message, error.stack);
   process.exit(1);
 });
 
 app.listen(configs.APP_PORT, async () => {
   await mongoose.connect(configs.MONGO_URI);
-  // eslint-disable-next-line no-console
   console.log(
     `Server is running on http://${configs.APP_HOST}:${configs.APP_PORT}`,
   );
