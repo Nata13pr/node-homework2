@@ -22,11 +22,9 @@ class AuthService {
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
 
-    await emailService.sendMail(
-      EmailTypeEnum.WELCOME,
-      "rusha.huyasha@gmail.com",
-      { name: user.name },
-    );
+    await emailService.sendMail(EmailTypeEnum.WELCOME, "Nata13pr@gmail.com", {
+      name: user.name,
+    });
     return { user, tokens };
   }
 
@@ -54,7 +52,26 @@ class AuthService {
     return { user, tokens };
   }
 
-  // TODO add refresh token service
+  public async logout(payload: ITokenPayload): Promise<void> {
+    await tokenRepository.deleteByParams({ _userId: payload.userId });
+
+    const user = await userRepository.getById(payload.userId);
+
+    await emailService.sendMail(EmailTypeEnum.LOGOUT, "Nata13pr@gmail.com", {
+      name: user.name,
+    });
+  }
+
+  public async logoutAll(payload: ITokenPayload): Promise<void> {
+    await tokenRepository.deleteByParamsMany({ _userId: payload.userId });
+
+    const user = await userRepository.getById(payload.userId);
+
+    await emailService.sendMail(EmailTypeEnum.LOGOUT, "Nata13pr@gmail.com", {
+      name: user.name,
+    });
+  }
+
   public async refresh(
     refreshToken: string,
     payload: ITokenPayload,

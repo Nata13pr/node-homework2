@@ -25,6 +25,28 @@ class AuthController {
     }
   }
 
+  public async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const jwtPayload = req.res.locals.jwtPayload as ITokenPayload;
+
+      await authService.logout(jwtPayload);
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  public async logoutAll(req: Request, res: Response, next: NextFunction) {
+    try {
+      const jwtPayload = req.res.locals.jwtPayload as ITokenPayload;
+
+      await authService.logoutAll(jwtPayload);
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
+
   public async refresh(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.res.locals.refreshToken as string;

@@ -14,8 +14,16 @@ router.post(
 );
 router.post(
   "/sign-in",
-  // commonMiddleware.isBodyValid(UserValidator.signIn),
+  commonMiddleware.isBodyValid(UserValidator.signIn),
   authController.signIn,
+);
+
+router.post("/logout", authMiddleware.checkAccessToken, authController.logout);
+
+router.post(
+  "/logoutAll",
+  authMiddleware.checkAccessToken,
+  authController.logoutAll,
 );
 
 router.post(
