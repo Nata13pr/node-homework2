@@ -1,7 +1,6 @@
 import { ActionTokenTypeEnum } from "../enums/action-token-type.enum";
 import { EmailTypeEnum } from "../enums/email-type.enum";
 import { ApiError } from "../errors/api-error";
-import { IActionVerifyToken } from "../interfaces/action-token-verify.interface";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
 import {
   IResetPasswordSend,
@@ -22,14 +21,18 @@ class AuthService {
   ): Promise<{ user: IUser; tokens: ITokenPair }> {
     await this.isEmailExistOrThrow(dto.email);
     const password = await passwordService.hashPassword(dto.password);
-
     const user = await userRepository.create({ ...dto, password });
+
+    const tokens = tokenService.generateTokens({
+      userId: user._id,
+      role: user.role,
+    });
+    await tokenRepository.create({ ...tokens, _userId: user._id });
 
     const token = tokenService.generateActionTokens(
       { userId: user._id, role: user.role },
       ActionTokenTypeEnum.VERIFY_EMAIL,
     );
-
     await actionTokenRepository.create({
       type: ActionTokenTypeEnum.VERIFY_EMAIL,
       _userId: user._id,
@@ -40,25 +43,7 @@ class AuthService {
       name: user.name,
       actionToken: token,
     });
-
-    const tokens = tokenService.generateTokens({
-      userId: user._id,
-      role: user.role,
-    });
-
-    await tokenRepository.create({ ...tokens, _userId: user._id });
-
     return { user, tokens };
-  }
-
-  public async verify(dto: IActionVerifyToken): Promise<IUser> {
-    const user = await userRepository.getByEmail(dto.email);
-
-    if (!user) {
-      throw new ApiError("User not found", 404);
-    }
-
-    return await userRepository.updateById(user._id, { isVerified: true });
   }
 
   public async signIn(
@@ -111,7 +96,7 @@ class AuthService {
   ): Promise<void> {
     const user = await userRepository.getById(jwtPayload.userId);
     await tokenRepository.deleteOneByParams({ _id: tokenId });
-    await emailService.sendMail(EmailTypeEnum.LOGOUT, "Nata13pr@gmail.com", {
+    await emailService.sendMail(EmailTypeEnum.LOGOUT, "feden2906@gmail.com", {
       name: user.name,
     });
   }
@@ -159,6 +144,14 @@ class AuthService {
       type: ActionTokenTypeEnum.FORGOT_PASSWORD,
     });
     await tokenRepository.deleteManyByParams({ _userId: jwtPayload.userId });
+  }
+
+  public async verify(jwtPayload: ITokenPayload): Promise<void> {
+    await userRepository.updateById(jwtPayload.userId, { isVerified: true });
+    await actionTokenRepository.deleteManyByParams({
+      _userId: jwtPayload.userId,
+      type: ActionTokenTypeEnum.VERIFY_EMAIL,
+    });
   }
 }
 

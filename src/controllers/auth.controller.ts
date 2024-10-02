@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 
-import { IActionVerifyToken } from "../interfaces/action-token-verify.interface";
 import { ITokenPayload } from "../interfaces/token.interface";
 import {
   IResetPasswordSend,
@@ -15,16 +14,6 @@ class AuthController {
     try {
       const dto = req.body as IUser;
       const result = await authService.signUp(dto);
-      res.status(201).json(result);
-    } catch (e) {
-      next(e);
-    }
-  }
-
-  public async verify(req: Request, res: Response, next: NextFunction) {
-    try {
-      const dto = req.body as IActionVerifyToken;
-      const result = await authService.verify(dto);
       res.status(201).json(result);
     } catch (e) {
       next(e);
@@ -100,6 +89,17 @@ class AuthController {
       const dto = req.body as IResetPasswordSet;
 
       await authService.forgotPasswordSet(dto, jwtPayload);
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  public async verify(req: Request, res: Response, next: NextFunction) {
+    try {
+      const jwtPayload = req.res.locals.jwtPayload as ITokenPayload;
+
+      await authService.verify(jwtPayload);
       res.sendStatus(204);
     } catch (e) {
       next(e);
