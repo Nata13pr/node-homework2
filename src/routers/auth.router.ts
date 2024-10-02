@@ -12,6 +12,8 @@ router.post(
   commonMiddleware.isBodyValid(UserValidator.create),
   authController.signUp,
 );
+
+router.post("/verify-email", authController.verify);
 router.post(
   "/sign-in",
   commonMiddleware.isBodyValid(UserValidator.signIn),
@@ -30,6 +32,13 @@ router.post(
   "/logout/all",
   authMiddleware.checkAccessToken,
   authController.logoutAll,
+);
+
+router.post("/forgot-password", authController.forgotPasswordSendEmail);
+router.put(
+  "/forgot-password",
+  authMiddleware.checkActionToken,
+  authController.forgotPasswordSet,
 );
 
 export const authRouter = router;

@@ -1,7 +1,15 @@
+import { ActionTokenTypeEnum } from "../enums/action-token-type.enum";
 import { EmailTypeEnum } from "../enums/email-type.enum";
 import { ApiError } from "../errors/api-error";
+import { IActionVerifyToken } from "../interfaces/action-token-verify.interface";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
-import { ISignIn, IUser } from "../interfaces/user.interface";
+import {
+  IResetPasswordSend,
+  IResetPasswordSet,
+  ISignIn,
+  IUser,
+} from "../interfaces/user.interface";
+import { actionTokenRepository } from "../repositories/action-token.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { emailService } from "./email.service";
@@ -14,20 +22,43 @@ class AuthService {
   ): Promise<{ user: IUser; tokens: ITokenPair }> {
     await this.isEmailExistOrThrow(dto.email);
     const password = await passwordService.hashPassword(dto.password);
+
     const user = await userRepository.create({ ...dto, password });
+
+    const token = tokenService.generateActionTokens(
+      { userId: user._id, role: user.role },
+      ActionTokenTypeEnum.VERIFY_EMAIL,
+    );
+
+    await actionTokenRepository.create({
+      type: ActionTokenTypeEnum.VERIFY_EMAIL,
+      _userId: user._id,
+      token,
+    });
+
+    await emailService.sendMail(EmailTypeEnum.WELCOME, user.email, {
+      name: user.name,
+      actionToken: token,
+    });
 
     const tokens = tokenService.generateTokens({
       userId: user._id,
       role: user.role,
     });
+
     await tokenRepository.create({ ...tokens, _userId: user._id });
 
-    await emailService.sendMail(
-      EmailTypeEnum.WELCOME,
-      "rusha.huyasha@gmail.com",
-      { name: user.name },
-    );
     return { user, tokens };
+  }
+
+  public async verify(dto: IActionVerifyToken): Promise<IUser> {
+    const user = await userRepository.getByEmail(dto.email);
+
+    if (!user) {
+      throw new ApiError("User not found", 404);
+    }
+
+    return await userRepository.updateById(user._id, { isVerified: true });
   }
 
   public async signIn(
@@ -54,7 +85,6 @@ class AuthService {
     return { user, tokens };
   }
 
-  // TODO add refresh token service
   public async refresh(
     refreshToken: string,
     payload: ITokenPayload,
@@ -81,7 +111,7 @@ class AuthService {
   ): Promise<void> {
     const user = await userRepository.getById(jwtPayload.userId);
     await tokenRepository.deleteOneByParams({ _id: tokenId });
-    await emailService.sendMail(EmailTypeEnum.LOGOUT, "feden2906@gmail.com", {
+    await emailService.sendMail(EmailTypeEnum.LOGOUT, "Nata13pr@gmail.com", {
       name: user.name,
     });
   }
@@ -92,6 +122,43 @@ class AuthService {
     await emailService.sendMail(EmailTypeEnum.LOGOUT, user.email, {
       name: user.name,
     });
+  }
+
+  public async forgotPasswordSendEmail(dto: IResetPasswordSend): Promise<void> {
+    const user = await userRepository.getByEmail(dto.email);
+    if (!user) {
+      throw new ApiError("User not found", 404);
+    }
+
+    const token = tokenService.generateActionTokens(
+      { userId: user._id, role: user.role },
+      ActionTokenTypeEnum.FORGOT_PASSWORD,
+    );
+    await actionTokenRepository.create({
+      type: ActionTokenTypeEnum.FORGOT_PASSWORD,
+      _userId: user._id,
+      token,
+    });
+
+    await emailService.sendMail(EmailTypeEnum.FORGOT_PASSWORD, user.email, {
+      name: user.name,
+      email: user.email,
+      actionToken: token,
+    });
+  }
+
+  public async forgotPasswordSet(
+    dto: IResetPasswordSet,
+    jwtPayload: ITokenPayload,
+  ): Promise<void> {
+    const password = await passwordService.hashPassword(dto.password);
+    await userRepository.updateById(jwtPayload.userId, { password });
+
+    await actionTokenRepository.deleteManyByParams({
+      _userId: jwtPayload.userId,
+      type: ActionTokenTypeEnum.FORGOT_PASSWORD,
+    });
+    await tokenRepository.deleteManyByParams({ _userId: jwtPayload.userId });
   }
 }
 
