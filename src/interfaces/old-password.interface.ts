@@ -1,5 +1,7 @@
 export interface IOldPassword {
   _id?: string;
-  oldPassword: string;
+  password: string;
   _userId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

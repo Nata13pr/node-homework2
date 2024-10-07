@@ -5,7 +5,8 @@ import { User } from "./user.model";
 
 const oldPasswordSchema = new Schema(
   {
-    oldPassword: { type: String, required: true, select: false },
+    password: { type: String, required: true },
+
     _userId: { type: Schema.Types.ObjectId, required: true, ref: User },
   },
   {
@@ -15,6 +16,6 @@ const oldPasswordSchema = new Schema(
 );
 
 export const OldPassword = model<IOldPassword>(
-  "oldPassword",
+  "old-passwords",
   oldPasswordSchema,
 );

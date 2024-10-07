@@ -24,17 +24,6 @@ class TokenRepository {
     });
     return deletedCount;
   }
-
-  public async getOldVisitors(date: Date): Promise<IToken[]> {
-    return await Token.find({
-      updatedAt: { $lt: date },
-    });
-  }
-  public async getOldVisitorsBeforeSevenDays(date: Date): Promise<IToken[]> {
-    return await Token.find({
-      updatedAt: { $gt: date },
-    });
-  }
 }
 
 export const tokenRepository = new TokenRepository();
