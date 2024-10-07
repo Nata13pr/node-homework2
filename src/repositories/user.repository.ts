@@ -11,7 +11,7 @@ class UserRepository {
   }
 
   public async getById(userId: string): Promise<IUser | null> {
-    return await User.findById(userId);
+    return await User.findById(userId).select("+password");
   }
 
   public async getByEmail(email: string): Promise<IUser | null> {
@@ -26,5 +26,4 @@ class UserRepository {
     await User.deleteOne({ _id: userId });
   }
 }
-
 export const userRepository = new UserRepository();

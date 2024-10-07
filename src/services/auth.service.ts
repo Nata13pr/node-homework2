@@ -3,12 +3,14 @@ import { EmailTypeEnum } from "../enums/email-type.enum";
 import { ApiError } from "../errors/api-error";
 import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
 import {
+  IChangePassword,
   IResetPasswordSend,
   IResetPasswordSet,
   ISignIn,
   IUser,
 } from "../interfaces/user.interface";
 import { actionTokenRepository } from "../repositories/action-token.repository";
+import { oldPasswordRepository } from "../repositories/old-password.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { emailService } from "./email.service";
@@ -136,6 +138,29 @@ class AuthService {
     dto: IResetPasswordSet,
     jwtPayload: ITokenPayload,
   ): Promise<void> {
+    const user = await userRepository.getById(jwtPayload.userId);
+    await oldPasswordRepository.create({
+      _userId: user._id,
+      oldPassword: user.password,
+    });
+
+    const oldPasswords = await oldPasswordRepository.findByParams({
+      _userId: user._id,
+    });
+
+    const isPasswordBeenAlreadyUsed = await Promise.all(
+      oldPasswords.map(
+        async (item) =>
+          await passwordService.comparePassword(dto.password, item.oldPassword),
+      ),
+    );
+
+    const isMatch = isPasswordBeenAlreadyUsed.some((is) => is);
+
+    if (isMatch) {
+      throw new ApiError("Passwords you already used,create a new one", 401);
+    }
+
     const password = await passwordService.hashPassword(dto.password);
     await userRepository.updateById(jwtPayload.userId, { password });
 
@@ -152,6 +177,48 @@ class AuthService {
       _userId: jwtPayload.userId,
       type: ActionTokenTypeEnum.VERIFY_EMAIL,
     });
+  }
+
+  public async changePassword(
+    jwtPayload: ITokenPayload,
+    dto: IChangePassword,
+  ): Promise<void> {
+    const user = await userRepository.getById(jwtPayload.userId);
+    const isPasswordCorrect = await passwordService.comparePassword(
+      dto.oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordCorrect) {
+      throw new ApiError("Invalid previous password", 401);
+    }
+
+    await oldPasswordRepository.create({
+      _userId: user._id,
+      oldPassword: user.password,
+    });
+
+    const oldPasswords = await oldPasswordRepository.findByParams({
+      _userId: user._id,
+    });
+
+    const isPasswordBeenAlreadyUsed = await Promise.all(
+      oldPasswords.map(
+        async (item) =>
+          await passwordService.comparePassword(dto.password, item.oldPassword),
+      ),
+    );
+
+    const isMatch = isPasswordBeenAlreadyUsed.some((is) => is);
+
+    if (isMatch) {
+      throw new ApiError("Passwords you already used,create a new one", 401);
+    }
+
+    const password = await passwordService.hashPassword(dto.password);
+
+    await userRepository.updateById(jwtPayload.userId, { password });
+    await tokenRepository.deleteManyByParams({ _userId: jwtPayload.userId });
   }
 }
 
