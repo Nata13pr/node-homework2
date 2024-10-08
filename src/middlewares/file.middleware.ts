@@ -1,28 +1,25 @@
 import { NextFunction, Request, Response } from "express";
 import { UploadedFile } from "express-fileupload";
 
+import { ApiError } from "../errors/api-error";
+
 class FileMiddleware {
-  public isFileValid(expectedType: string, maxSize: number) {
+  public isFileValid(
+    key: string,
+    config: { avatarSize: number; avatarTypes: string[] },
+  ) {
     return (req: Request, res: Response, next: NextFunction) => {
       try {
-        const avatar = req.files.avatar as UploadedFile;
-        if (!avatar) {
-          return res.status(400).send({ message: "No file uploaded" });
+        const file = req.files?.[key] as UploadedFile;
+        if (!file) {
+          throw new ApiError("File not found", 400);
         }
-
-        if (
-          avatar.mimetype.trim().toLowerCase() !==
-          expectedType.trim().toLowerCase()
-        ) {
-          return res.status(400).send({ message: "Invalid file type" });
+        if (file.size > config.avatarSize) {
+          throw new ApiError("File is too big", 400);
         }
-
-        if (avatar.size > maxSize) {
-          return res.status(400).send({
-            message: `File size exceeds the limit of ${maxSize / (1024 * 1024)} MB`,
-          });
+        if (!config.avatarTypes.includes(file.mimetype)) {
+          throw new ApiError("Invalid file type", 400);
         }
-
         next();
       } catch (e) {
         next(e);
