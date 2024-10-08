@@ -30,4 +30,7 @@ export const configs = {
   AWS_S3_REGION: process.env.AWS_S3_REGION,
   AWS_S3_ACL: process.env.AWS_S3_ACL as ObjectCannedACL,
   AWS_S3_ENDPOINT: process.env.AWS_S3_ENDPOINT,
+
+  AVATAR_TYPE: process.env.AVATAR_TYPE,
+  AVATAR_SIZE: process.env.AVATAR_SIZE,
 };

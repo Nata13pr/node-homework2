@@ -49,7 +49,7 @@ class UserService {
     );
     const updatedUser = await userRepository.updateById(user._id, { avatar });
     if (user.avatar) {
-      // await s3Service.deleteFile(user.avatar); TODO
+      await s3Service.deleteFile(user.avatar);
     }
     return updatedUser;
   }
